@@ -591,10 +591,11 @@ body {
 .bar-visual {
     flex: 1;
     height: 30px;
-    background: linear-gradient(90deg, #3498db, #2980b9);
+    background: #ecf0f1;
     border-radius: 15px;
     position: relative;
     overflow: hidden;
+    border: 1px solid #bdc3c7;
 }
 
 .bar-fill {

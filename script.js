@@ -871,11 +871,15 @@ function createBarChart() {
     const topDistricts = districtStats.slice(0, 5);
     const maxCount = Math.max(...topDistricts.map(d => d.count));
     
+    console.log('📊 막대그래프 데이터:', topDistricts);
+    console.log('📊 최대값:', maxCount);
+    
     topDistricts.forEach((district, index) => {
         const barItem = document.createElement('div');
         barItem.className = 'bar-item';
         
         const percentage = (district.count / maxCount) * 100;
+        console.log(`📊 ${district.district}: ${district.count}개 (${percentage.toFixed(1)}%)`);
         
         barItem.innerHTML = `
             <div class="district-name">${district.district}</div>
@@ -887,10 +891,12 @@ function createBarChart() {
         
         chartContainer.appendChild(barItem);
         
-        // 애니메이션 효과
+        // 애니메이션 효과 - 더 긴 지연시간으로 확실하게 적용
         setTimeout(() => {
-            barItem.querySelector('.bar-fill').style.width = `${percentage}%`;
-        }, index * 200);
+            const barFill = barItem.querySelector('.bar-fill');
+            barFill.style.width = `${percentage}%`;
+            console.log(`🎯 ${district.district} 막대 애니메이션: ${percentage}%`);
+        }, index * 300 + 100);
     });
 }
 
