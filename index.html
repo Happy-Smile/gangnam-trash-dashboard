@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쓰담쓰담 강남</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-recycle"></i>
+                <span>쓰담쓰담 강남</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-link">지도</a>
+                <a href="#" class="nav-link">통계</a>
+                <a href="#" class="nav-link">현장조사</a>
+                <a href="#" class="nav-link">시민제보</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Statistics Cards -->
+        <section class="stats-section">
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>전체 쓰레기통</h3>
+                        <div class="stat-number" id="total-trash-cans">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>데이터 없음</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>현장조사 건수</h3>
+                        <div class="stat-number">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>시민제보 건수</h3>
+                        <div class="stat-number">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>우선개선 지역</h3>
+                        <div class="stat-number">0</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Map Section -->
+        <section class="map-section">
+            <div class="map-header">
+                <h2>강남구 쓰레기통 현황 지도</h2>
+                <div class="map-controls">
+                    <button class="control-btn active" id="trash-cans-btn">
+                        <i class="fas fa-trash-alt"></i>
+                        쓰레기통
+                    </button>
+                    <button class="control-btn" id="field-survey-btn">
+                        <i class="fas fa-search"></i>
+                        Q 현장조사
+                    </button>
+                    <button class="control-btn" id="citizen-report-btn">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ▲ 시민제보
+                    </button>
+                    <button class="control-btn" id="api-data-btn">
+                        <i class="fas fa-database"></i>
+                        API 데이터
+                    </button>
+                </div>
+            </div>
+            <div id="map"></div>
+        </section>
+    </main>
+
+    <!-- 시민제보 모달 -->
+    <div id="citizen-report-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>시민제보</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="citizen-report-form">
+                    <div class="form-group">
+                        <label for="report-title">제보 제목</label>
+                        <input type="text" id="report-title" placeholder="예: 쓰레기통이 넘쳐흘러요" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="report-description">상세 설명</label>
+                        <textarea id="report-description" rows="4" placeholder="구체적인 상황을 설명해주세요"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="photo-upload">📸 사진 업로드</label>
+                        <div class="photo-upload-area" id="photo-upload-area">
+                            <input type="file" id="photo-upload" accept="image/*" capture="environment" style="display: none;">
+                            <div class="upload-placeholder">
+                                <div class="camera-icon">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <h3>사진을 찍어서 업로드하세요</h3>
+                                <p>쓰레기통의 상태를 명확하게 보여주는 사진을 찍어주세요</p>
+                                <div class="upload-tips">
+                                    <small>💡 <strong>팁:</strong> 위치 정보가 포함된 사진을 권장합니다</small>
+                                    <small>📱 카메라로 직접 촬영하거나 갤러리에서 선택할 수 있습니다</small>
+                                </div>
+                                <button type="button" class="upload-btn">
+                                    <i class="fas fa-plus"></i> 사진 선택
+                                </button>
+                            </div>
+                            <div class="photo-preview" id="photo-preview" style="display: none;">
+                                <div class="preview-container">
+                                    <img id="preview-image" src="" alt="미리보기">
+                                    <div class="photo-overlay">
+                                        <button type="button" id="remove-photo" class="remove-btn">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="photo-info">
+                                    <div class="location-info">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span id="photo-location">위치: 확인 중...</span>
+                                    </div>
+                                    <div class="photo-actions">
+                                        <button type="button" id="change-photo" class="change-btn">
+                                            <i class="fas fa-edit"></i> 사진 변경
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="report-type">제보 유형</label>
+                        <select id="report-type">
+                            <option value="overflow">쓰레기통 넘침</option>
+                            <option value="damage">쓰레기통 파손</option>
+                            <option value="missing">쓰레기통 없음</option>
+                            <option value="location">위치 문제</option>
+                            <option value="other">기타</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel">취소</button>
+                        <button type="submit" class="btn-submit">제보하기</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- EXIF.js for reading photo metadata -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
