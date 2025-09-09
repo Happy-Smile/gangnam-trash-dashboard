@@ -720,9 +720,9 @@ function addCitizenReportMarker(report) {
     // 매우 간단한 빨간 마커 생성
     const marker = L.marker([report.coordinates.lat, report.coordinates.lng], {
         icon: L.divIcon({
-            html: '<div style="width: 25px; height: 25px; background: red; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 15px rgba(255,0,0,1);"></div>',
-            iconSize: [25, 25],
-            iconAnchor: [12, 12]
+            html: '<div style="width: 18px; height: 18px; background: red; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(255,0,0,0.8);"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
         })
     }).bindPopup(`
         <div class="popup-content">
