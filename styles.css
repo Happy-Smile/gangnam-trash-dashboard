@@ -523,6 +523,156 @@ body {
     font-weight: bold;
 }
 
+/* 통계 섹션 스타일 */
+.statistics-section {
+    padding: 20px;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.statistics-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.statistics-header h2 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.statistics-header p {
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+.chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.chart-header h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.bar-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.bar-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.district-name {
+    min-width: 100px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.bar-visual {
+    flex: 1;
+    height: 30px;
+    background: linear-gradient(90deg, #3498db, #2980b9);
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2980b9);
+    border-radius: 15px;
+    transition: width 0.8s ease;
+    position: relative;
+}
+
+.bar-count {
+    min-width: 50px;
+    text-align: right;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.priority-areas {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.priority-header h3 {
+    color: #e74c3c;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.priority-header p {
+    color: #7f8c8d;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.priority-table {
+    overflow-x: auto;
+}
+
+.priority-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.priority-table th,
+.priority-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.priority-table th {
+    background: #f8f9fa;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.priority-table tr:hover {
+    background: #f8f9fa;
+}
+
+.priority-high {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.priority-medium {
+    color: #f39c12;
+    font-weight: bold;
+}
+
+.priority-low {
+    color: #27ae60;
+    font-weight: bold;
+}
+
 .status-in_progress {
     color: #007bff;
     font-weight: bold;

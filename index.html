@@ -106,6 +106,44 @@
             </div>
             <div id="map"></div>
         </section>
+        
+        <!-- 통계 섹션 (숨김) -->
+        <section id="statistics-section" class="statistics-section" style="display: none;">
+            <div class="statistics-header">
+                <h2>📊 행정동별 쓰레기통 현황</h2>
+                <p>강남구 행정동별 쓰레기통 설치 현황을 확인하세요</p>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>🗑️ 행정동별 쓰레기통 개수 (상위 10개)</h3>
+                </div>
+                <div id="bar-chart" class="bar-chart"></div>
+            </div>
+            
+            <div class="priority-areas">
+                <div class="priority-header">
+                    <h3>⚠️ 부족 지역 우선순위</h3>
+                    <p>쓰레기통이 부족한 지역을 우선순위별로 표시합니다</p>
+                </div>
+                <div id="priority-table" class="priority-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>행정동</th>
+                                <th>쓰레기통 수</th>
+                                <th>부족도</th>
+                                <th>개선 필요도</th>
+                            </tr>
+                        </thead>
+                        <tbody id="priority-tbody">
+                            <!-- 동적으로 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- 시민제보 모달 -->

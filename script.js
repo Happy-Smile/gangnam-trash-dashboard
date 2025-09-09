@@ -179,6 +179,34 @@ function calculateStatistics() {
     };
 }
 
+// 행정동별 통계 데이터
+let districtStats = [];
+
+// 행정동별 통계 생성
+function generateDistrictStats() {
+    const districtCount = {};
+    
+    // CSV 데이터에서 행정동별 쓰레기통 개수 계산
+    trashCanData.forEach(item => {
+        if (item.address) {
+            // 주소에서 행정동 추출 (예: "서울특별시 강남구 역삼1동" -> "역삼1동")
+            const addressParts = item.address.split(' ');
+            if (addressParts.length >= 3) {
+                const district = addressParts[2]; // 행정동
+                districtCount[district] = (districtCount[district] || 0) + 1;
+            }
+        }
+    });
+    
+    // 배열로 변환하고 정렬
+    districtStats = Object.entries(districtCount)
+        .map(([district, count]) => ({ district, count }))
+        .sort((a, b) => b.count - a.count); // 개수 내림차순 정렬
+    
+    console.log('📊 행정동별 통계 생성:', districtStats);
+    return districtStats;
+}
+
 // 지도 초기화 함수
 async function initMap() {
     map = L.map('map').setView(GANGNAM_CENTER, 13);
@@ -214,6 +242,9 @@ async function loadDataAndUpdateMap() {
         // 통계 계산 및 업데이트
         const statsData = calculateStatistics();
         updateStatistics(statsData);
+        
+        // 행정동별 통계 생성
+        generateDistrictStats();
         
         // 로딩 상태 제거
         hideLoadingState();
@@ -767,12 +798,139 @@ function getStatusName(status) {
     return statusNames[status] || status;
 }
 
+// 통계 페이지 표시
+function showStatisticsPage() {
+    // 지도 섹션 숨기기
+    document.querySelector('.map-section').style.display = 'none';
+    
+    // 통계 섹션 표시
+    const statsSection = document.getElementById('statistics-section');
+    statsSection.style.display = 'block';
+    
+    // 막대그래프 생성
+    createBarChart();
+    
+    // 우선순위 테이블 생성
+    createPriorityTable();
+}
+
+// 지도 페이지 표시
+function showMapPage() {
+    // 통계 섹션 숨기기
+    document.getElementById('statistics-section').style.display = 'none';
+    
+    // 지도 섹션 표시
+    document.querySelector('.map-section').style.display = 'block';
+}
+
+// 막대그래프 생성
+function createBarChart() {
+    const chartContainer = document.getElementById('bar-chart');
+    chartContainer.innerHTML = '';
+    
+    if (districtStats.length === 0) {
+        chartContainer.innerHTML = '<p style="text-align: center; color: #7f8c8d;">데이터가 없습니다.</p>';
+        return;
+    }
+    
+    // 상위 10개만 표시
+    const topDistricts = districtStats.slice(0, 10);
+    const maxCount = Math.max(...topDistricts.map(d => d.count));
+    
+    topDistricts.forEach((district, index) => {
+        const barItem = document.createElement('div');
+        barItem.className = 'bar-item';
+        
+        const percentage = (district.count / maxCount) * 100;
+        
+        barItem.innerHTML = `
+            <div class="district-name">${district.district}</div>
+            <div class="bar-visual">
+                <div class="bar-fill" style="width: ${percentage}%"></div>
+            </div>
+            <div class="bar-count">${district.count}개</div>
+        `;
+        
+        chartContainer.appendChild(barItem);
+        
+        // 애니메이션 효과
+        setTimeout(() => {
+            barItem.querySelector('.bar-fill').style.width = `${percentage}%`;
+        }, index * 100);
+    });
+}
+
+// 우선순위 테이블 생성
+function createPriorityTable() {
+    const tbody = document.getElementById('priority-tbody');
+    tbody.innerHTML = '';
+    
+    if (districtStats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #7f8c8d;">데이터가 없습니다.</td></tr>';
+        return;
+    }
+    
+    // 하위 5개 지역을 부족 지역으로 표시
+    const shortageDistricts = districtStats.slice(-5).reverse();
+    
+    shortageDistricts.forEach((district, index) => {
+        const row = document.createElement('tr');
+        
+        // 부족도 계산 (임의의 기준)
+        let shortageLevel, priorityClass;
+        if (district.count < 20) {
+            shortageLevel = '높음';
+            priorityClass = 'priority-high';
+        } else if (district.count < 40) {
+            shortageLevel = '보통';
+            priorityClass = 'priority-medium';
+        } else {
+            shortageLevel = '낮음';
+            priorityClass = 'priority-low';
+        }
+        
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${district.district}</td>
+            <td>${district.count}개</td>
+            <td class="${priorityClass}">${shortageLevel}</td>
+            <td class="${priorityClass}">${shortageLevel === '높음' ? '긴급' : shortageLevel === '보통' ? '보통' : '낮음'}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
 // 시민제보 개수 업데이트
 function updateCitizenReportCount() {
     const citizenReportElement = document.querySelector('.stat-card:nth-child(3) .stat-number');
     if (citizenReportElement) {
         citizenReportElement.textContent = citizenReports.length;
     }
+}
+
+// 네비게이션 설정
+function setupNavigation() {
+    // 네비게이션 버튼 이벤트 리스너
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 모든 링크에서 active 클래스 제거
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            
+            // 클릭된 링크에 active 클래스 추가
+            this.classList.add('active');
+            
+            // 페이지 전환
+            const linkText = this.textContent.trim();
+            if (linkText === '통계') {
+                showStatisticsPage();
+            } else if (linkText === '지도') {
+                showMapPage();
+            }
+        });
+    });
 }
 
 // 페이지 로드 시 초기화
@@ -783,6 +941,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         await initMap();
         setupMapControls();
         setupCitizenReport();
+        setupNavigation();
         
         // 지도 크기 조정
         setTimeout(() => {
