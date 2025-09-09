@@ -200,21 +200,30 @@ function generateDistrictStats() {
     
     // CSV 데이터에서 행정동별 쓰레기통 개수 계산
     trashCanData.forEach(item => {
-        if (item.address) {
-            // 주소에서 행정동 추출
-            // 예: "서울특별시 강남구 역삼1동 청담동 123-45" -> "역삼1동"
-            const addressParts = item.address.split(' ');
+        if (item.location) { // 설치위치 필드 사용
+            const location = item.location;
             
-            // 강남구 다음에 오는 부분이 행정동
-            for (let i = 0; i < addressParts.length; i++) {
-                if (addressParts[i] === '강남구' && i + 1 < addressParts.length) {
-                    const district = addressParts[i + 1];
-                    
-                    // 행정동 패턴 확인 (예: 역삼1동, 세곡동, 대치2동 등)
-                    if (district.match(/동$/)) {
-                        districtCount[district] = (districtCount[district] || 0) + 1;
-                        break;
-                    }
+            // 강남구 주요 행정동 매핑
+            const districts = {
+                '역삼': '역삼1동',
+                '세곡': '세곡동', 
+                '대치': '대치1동',
+                '청담': '청담동',
+                '압구정': '압구정동',
+                '논현': '논현1동',
+                '도곡': '도곡1동',
+                '삼성': '삼성1동',
+                '신사': '신사동',
+                '개포': '개포1동',
+                '일원': '일원1동',
+                '수서': '수서동'
+            };
+            
+            // 설치위치에서 행정동 추출
+            for (const [key, district] of Object.entries(districts)) {
+                if (location.includes(key)) {
+                    districtCount[district] = (districtCount[district] || 0) + 1;
+                    break;
                 }
             }
         }
