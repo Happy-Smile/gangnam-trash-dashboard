@@ -11,6 +11,30 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyANsJ4t5rD51WlbYPvKA6HBVXjr2eyC1oo",
+            authDomain: "gangnam-trash-dashboard.firebaseapp.com",
+            projectId: "gangnam-trash-dashboard",
+            storageBucket: "gangnam-trash-dashboard.firebasestorage.app",
+            messagingSenderId: "1002818925401",
+            appId: "1:1002818925401:web:0b2f44c3152df3bd589248"
+        };
+        
+        // Firebase 초기화
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // 전역 변수로 설정
+        window.firebaseDB = db;
+        window.firebaseCollection = collection(db, 'citizenReports');
+    </script>
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>

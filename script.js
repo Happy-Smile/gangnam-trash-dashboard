@@ -8,6 +8,40 @@ let currentLayer = 'trash-cans';
 let trashCanData = [];
 let citizenReports = [];
 
+// Firebase 사용 여부
+let USE_FIREBASE = true;
+
+// Firebase 함수들
+async function addCitizenReportToFirebase(reportData) {
+    try {
+        const { addDoc, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const docRef = await addDoc(collection(window.firebaseDB, 'citizenReports'), {
+            ...reportData,
+            timestamp: new Date().toISOString(),
+            status: 'pending'
+        });
+        return { id: docRef.id, ...reportData };
+    } catch (error) {
+        console.error('Firebase 저장 오류:', error);
+        throw error;
+    }
+}
+
+async function getCitizenReportsFromFirebase() {
+    try {
+        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const querySnapshot = await getDocs(collection(window.firebaseDB, 'citizenReports'));
+        const reports = [];
+        querySnapshot.forEach((doc) => {
+            reports.push({ id: doc.id, ...doc.data() });
+        });
+        return reports;
+    } catch (error) {
+        console.error('Firebase 로드 오류:', error);
+        throw error;
+    }
+}
+
 // 강남구 중심 좌표
 const GANGNAM_CENTER = [37.5172, 127.0473];
 
@@ -335,22 +369,29 @@ async function loadCitizenReports() {
     try {
         console.log('🔄 시민제보 데이터 로드 시작...');
         
-        // 백엔드 연결 시도
-        const response = await fetch(`${API_BASE_URL}/citizen-reports`);
-        
-        if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-                citizenReports = result.data;
-                console.log('✅ 시민제보 데이터 로드 완료:', citizenReports.length, '개');
-                console.log('📍 시민제보 좌표들:', citizenReports.map(r => r.coordinates));
+        // Firebase 연결 시도
+        if (USE_FIREBASE && window.firebaseDB) {
+            try {
+                console.log('🔥 Firebase에서 데이터 로드 시도...');
+                const firebaseReports = await getCitizenReportsFromFirebase();
+                console.log('✅ Firebase 시민제보 데이터 로드 완료:', firebaseReports.length, '개');
+                
+                // Firebase 데이터가 더 많으면 Firebase 데이터 사용
+                if (firebaseReports.length > citizenReports.length) {
+                    citizenReports = firebaseReports;
+                    // 로컬 스토리지에도 저장
+                    localStorage.setItem('citizenReports', JSON.stringify(firebaseReports));
+                    console.log('💾 Firebase 데이터를 로컬 스토리지에 백업 저장');
+                }
                 USE_BACKEND = true;
                 return;
+            } catch (firebaseError) {
+                console.warn('⚠️ Firebase 로드 실패, 로컬 데이터 사용:', firebaseError);
             }
         }
         
-        // 백엔드 연결 실패 시 로컬 스토리지에서 로드
-        console.log('⚠️ 백엔드 연결 실패, 로컬 데이터 사용');
+        // Firebase 연결 실패 시 로컬 스토리지에서 로드
+        console.log('⚠️ Firebase 연결 실패, 로컬 데이터 사용');
         const localData = localStorage.getItem('citizenReports');
         if (localData) {
             citizenReports = JSON.parse(localData);
@@ -362,7 +403,14 @@ async function loadCitizenReports() {
         
     } catch (error) {
         console.error('❌ 시민제보 데이터 로드 오류:', error);
-        citizenReports = [];
+        // 오류 발생 시 로컬 스토리지에서 로드 시도
+        const localData = localStorage.getItem('citizenReports');
+        if (localData) {
+            citizenReports = JSON.parse(localData);
+            console.log('🆘 오류 복구: 로컬 데이터 사용:', citizenReports.length, '개');
+        } else {
+            citizenReports = [];
+        }
         USE_BACKEND = false;
     }
 }
@@ -742,25 +790,17 @@ async function handleFormSubmit(event) {
            try {
                let report;
                
-               if (USE_BACKEND) {
-                   // 서버로 제보 데이터 전송
-                   const response = await fetch(`${API_BASE_URL}/citizen-reports`, {
-                       method: 'POST',
-                       headers: {
-                           'Content-Type': 'application/json',
-                       },
-                       body: JSON.stringify(reportData)
-                   });
+               if (USE_FIREBASE && window.firebaseDB) {
+                   // Firebase에 저장
+                   report = await addCitizenReportToFirebase(reportData);
+                   console.log('✅ Firebase 시민제보 저장 완료:', report);
                    
-                   const result = await response.json();
-                   
-                   if (result.success) {
-                       report = result.data;
-                   } else {
-                       throw new Error(result.error || '서버 오류가 발생했습니다.');
-                   }
+                   // Firebase 저장 후 로컬 스토리지에도 백업 저장
+                   citizenReports.push(report);
+                   localStorage.setItem('citizenReports', JSON.stringify(citizenReports));
+                   console.log('💾 Firebase 데이터를 로컬 스토리지에 백업 저장');
                } else {
-                   // 로컬 스토리지에 저장
+                   // 로컬 스토리지에 저장 (Firebase 사용 불가시)
                    report = {
                        id: Date.now(),
                        title: reportData.title,
