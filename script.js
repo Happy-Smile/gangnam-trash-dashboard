@@ -19,7 +19,7 @@ const API_BASE_URL = window.location.hostname === 'localhost'
 // CSV 파일에서 데이터 가져오기 (주소 기반 좌표 변환)
 async function fetchTrashBins() {
     try {
-        const response = await fetch('서울특별시_강남구_쓰레기통설치현황_20210622_utf8.csv');
+        const response = await fetch('./서울특별시_강남구_쓰레기통설치현황_20210622_utf8.csv');
         const csvText = await response.text();
         
         trashCanData = [];

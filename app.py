@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import requests
 import json
@@ -332,6 +332,15 @@ def health_check():
         "status": "healthy",
         "timestamp": datetime.now().isoformat()
     })
+
+# 정적 파일 서빙
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:filename>')
+def static_files(filename):
+    return send_from_directory('.', filename)
 
 # Vercel 배포용
 app = app
