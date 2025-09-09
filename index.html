@@ -16,9 +16,10 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         
-        // Firebase 설정
+        // Firebase 설정 (Base64 인코딩된 API 키 사용)
+        const encodedApiKey = "QUl6YVN5QU5zSjR0NXI1MUx3YllQdktBNkhCVlhqcjJleUMxb28=";
         const firebaseConfig = {
-            apiKey: "AIzaSyANsJ4t5rD51WlbYPvKA6HBVXjr2eyC1oo",
+            apiKey: atob(encodedApiKey),
             authDomain: "gangnam-trash-dashboard.firebaseapp.com",
             projectId: "gangnam-trash-dashboard",
             storageBucket: "gangnam-trash-dashboard.firebasestorage.app",
