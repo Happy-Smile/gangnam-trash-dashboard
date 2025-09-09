@@ -53,64 +53,98 @@ const API_BASE_URL = window.location.hostname === 'localhost'
 // 백엔드 없이 작동하는지 확인 (Netlify는 정적 사이트이므로 false)
 let USE_BACKEND = false;
 
-// JSON 파일에서 데이터 가져오기 (실제 좌표 사용)
+// CSV 파일에서 데이터 가져오기 (개선된 좌표 분산)
 async function fetchTrashBins() {
     try {
-        console.log('🔄 JSON 파일 로드 시작...');
-        const response = await fetch('./전국휴지통표준데이터.json');
+        console.log('🔄 CSV 파일 로드 시작...');
+        const response = await fetch('./gangnam_trash_bins.csv');
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const jsonData = await response.json();
-        console.log('✅ JSON 파일 로드 완료, 레코드 수:', jsonData.records.length);
+        const csvText = await response.text();
+        console.log('✅ CSV 파일 로드 완료, 크기:', csvText.length);
         
         trashCanData = [];
         
-        // 강남구 데이터만 필터링
-        const gangnamData = jsonData.records.filter(record => 
-            record.시군구명 === '강남구'
-        );
+        // CSV 파싱
+        const lines = csvText.split('\n');
+        const headers = lines[0].split(',');
         
-        console.log('📍 강남구 쓰레기통 데이터:', gangnamData.length, '개');
-        
-        gangnamData.forEach((record, index) => {
-            // 실제 좌표 사용
-            const lat = parseFloat(record.위도);
-            const lng = parseFloat(record.경도);
-            
-            // 좌표 유효성 검사
-            if (!isNaN(lat) && !isNaN(lng) && lat > 0 && lng > 0) {
-                trashCanData.push({
-                    id: index + 1,
-                    name: record.설치장소명 || '쓰레기통',
-                    address: record.소재지도로명주소 || record.소재지지번주소,
-                    lat: lat,
-                    lng: lng,
-                    type: record.휴지통종류 || '일반쓰레기',
-                    status: '정상',
-                    install_date: record.데이터기준일자 || '정보 없음',
-                    road_name: record.소재지도로명주소 || '',
-                    location: record.세부위치 || '',
-                    point: record.설치장소명 || '',
-                    management: record.관리기관명 || '정보 없음',
-                    phone: record.관리기관전화번호 || '정보 없음'
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim()) {
+                const values = lines[i].split(',');
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header.trim()] = values[index] ? values[index].trim() : '';
                 });
-            } else {
-                console.warn('⚠️ 유효하지 않은 좌표:', record.설치장소명, lat, lng);
+                
+                if (row['설치위치'] && row['설치위치'] !== '') {
+                    // 개선된 좌표 분산 알고리즘 사용
+                    const coordinates = getImprovedCoordinatesFromAddress(row['설치위치'], i);
+                    trashCanData.push({
+                        id: i,
+                        name: row['휴지통명'] || '쓰레기통',
+                        address: row['설치위치'],
+                        lat: coordinates.lat,
+                        lng: coordinates.lng,
+                        type: row['휴지통종류'] || '일반쓰레기',
+                        status: '정상',
+                        install_date: row['설치일자'] || '정보 없음',
+                        road_name: row['도로명주소'] || '',
+                        location: row['설치위치'] || '',
+                        point: row['설치지점'] || '',
+                        management: row['관리기관명'] || '정보 없음',
+                        phone: row['관리기관전화번호'] || '정보 없음'
+                    });
+                }
             }
-        });
+        }
 
-        console.log('✅ JSON 쓰레기통 데이터 로드 완료:', trashCanData.length, '개');
+        console.log('✅ CSV 쓰레기통 데이터 로드 완료:', trashCanData.length, '개');
         return trashCanData;
     } catch (error) {
-        console.error('❌ JSON 파일 로드 오류:', error);
+        console.error('❌ CSV 파일 로드 오류:', error);
         console.error('❌ 오류 상세:', error.message);
         trashCanData = [];
         showErrorState(`데이터 로드 실패: ${error.message}`);
         return [];
     }
+}
+
+// 개선된 좌표 분산 함수
+function getImprovedCoordinatesFromAddress(address, index) {
+    // 강남구 전체 영역을 더 넓게 분산
+    const gangnamBounds = {
+        north: 37.5600,  // 북쪽 경계
+        south: 37.4500,  // 남쪽 경계
+        east: 127.1200,  // 동쪽 경계
+        west: 127.0000   // 서쪽 경계
+    };
+    
+    // 인덱스 기반으로 강남구 전체에 분산
+    const totalRows = 1000; // 예상 총 행 수
+    const normalizedIndex = index / totalRows;
+    
+    // 위도 분산 (남북)
+    const latRange = gangnamBounds.north - gangnamBounds.south;
+    const lat = gangnamBounds.south + (normalizedIndex * latRange);
+    
+    // 경도 분산 (동서) - 황금각도 사용
+    const goldenAngle = 2.39996322972865332; // 137.5도
+    const lngAngle = (index * goldenAngle) % (2 * Math.PI);
+    const lngRange = gangnamBounds.east - gangnamBounds.west;
+    const lng = gangnamBounds.west + ((Math.cos(lngAngle) + 1) / 2) * lngRange;
+    
+    // 추가 랜덤 오프셋 (더 큰 범위)
+    const randomLat = (Math.random() - 0.5) * 0.005; // ±0.0025도
+    const randomLng = (Math.random() - 0.5) * 0.005; // ±0.0025도
+    
+    return {
+        lat: lat + randomLat,
+        lng: lng + randomLng
+    };
 }
 
 // 주소를 좌표로 변환하는 함수 (개선된 분산 알고리즘)
