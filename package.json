@@ -4,14 +4,7 @@
   "description": "강남구 쓰레기통 관리 대시보드",
   "main": "index.html",
   "scripts": {
-    "start": "python3 app.py",
+    "build": "echo 'Static site - no build needed'",
     "dev": "python3 -m http.server 8000"
-  },
-  "dependencies": {
-    "flask": "^2.3.0",
-    "flask-cors": "^4.0.0"
-  },
-  "engines": {
-    "python": "3.9"
   }
 }
