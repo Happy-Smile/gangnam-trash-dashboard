@@ -182,6 +182,9 @@ function calculateStatistics() {
 // 행정동별 통계 데이터
 let districtStats = [];
 
+// 시민제보 마커 표시 상태
+let citizenReportsVisible = true;
+
 // 행정동별 통계 생성
 function generateDistrictStats() {
     const districtCount = {};
@@ -534,6 +537,21 @@ function setupCitizenReport() {
     // 사진 업로드 영역 클릭
     photoUploadArea.addEventListener('click', () => {
         photoUpload.click();
+    });
+    
+    // 상단 시민제보 버튼 (새 제보 입력)
+    document.getElementById('new-citizen-report-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    });
+    
+    // 가운데 시민제보 버튼 (기존 제보 위치 표시)
+    document.getElementById('show-citizen-reports-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleCitizenReports();
     });
 
     // 업로드 버튼 클릭
@@ -941,6 +959,30 @@ function setupNavigation() {
             }
         });
     });
+}
+
+// 시민제보 마커 토글
+function toggleCitizenReports() {
+    citizenReportsVisible = !citizenReportsVisible;
+    
+    if (citizenReportsVisible) {
+        // 시민제보 마커 표시
+        addAllCitizenReportMarkers();
+        document.getElementById('show-citizen-reports-btn').innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            ▲ 시민제보
+        `;
+        console.log('✅ 시민제보 마커 표시');
+    } else {
+        // 시민제보 마커 숨기기
+        citizenReportMarkers.forEach(marker => map.removeLayer(marker));
+        citizenReportMarkers = [];
+        document.getElementById('show-citizen-reports-btn').innerHTML = `
+            <i class="fas fa-eye-slash"></i>
+            ▲ 시민제보 숨김
+        `;
+        console.log('❌ 시민제보 마커 숨김');
+    }
 }
 
 // 페이지 로드 시 초기화
