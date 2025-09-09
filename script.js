@@ -783,13 +783,7 @@ async function handleFormSubmit(event) {
                // 제보 위치로 지도 이동 및 줌
                map.setView([report.coordinates.lat, report.coordinates.lng], 16);
                
-               // 마커에 애니메이션 효과 추가
-               setTimeout(() => {
-                   const marker = citizenReportMarkers[citizenReportMarkers.length - 1];
-                   if (marker) {
-                       marker.openPopup();
-                   }
-               }, 500);
+               // 팝업 자동 열기 제거됨
                
                // 통계 업데이트
                updateCitizenReportCount();
@@ -825,23 +819,14 @@ function addCitizenReportMarker(report) {
         return;
     }
     
-    // 매우 간단한 빨간 마커 생성
+    // 팝업 없는 간단한 빨간 마커 생성
     const marker = L.marker([report.coordinates.lat, report.coordinates.lng], {
         icon: L.divIcon({
             html: '<div style="width: 18px; height: 18px; background: red; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(255,0,0,0.8);"></div>',
             iconSize: [18, 18],
             iconAnchor: [9, 9]
         })
-    }).bindPopup(`
-        <div class="popup-content">
-            <h3>🚨 ${report.title}</h3>
-            <p><strong>유형:</strong> ${getReportTypeName(report.type)}</p>
-            <p><strong>설명:</strong> ${report.description}</p>
-            <p><strong>제보시간:</strong> ${new Date(report.timestamp).toLocaleString()}</p>
-            <p><strong>상태:</strong> <span class="status-${report.status}">${getStatusName(report.status)}</span></p>
-            ${report.photo ? `<img src="${report.photo}" style="max-width: 200px; margin-top: 10px; border-radius: 8px;">` : ''}
-        </div>
-    `);
+    });
     
     console.log('📍 마커 생성 완료:', marker);
     
