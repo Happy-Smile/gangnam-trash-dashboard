@@ -16,8 +16,8 @@ const API_BASE_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api' 
     : '/api';
 
-// 백엔드 없이 작동하는지 확인
-let USE_BACKEND = true;
+// 백엔드 없이 작동하는지 확인 (Netlify는 정적 사이트이므로 false)
+let USE_BACKEND = false;
 
 // CSV 파일에서 데이터 가져오기 (주소 기반 좌표 변환)
 async function fetchTrashBins() {
@@ -468,19 +468,7 @@ function setupMapControls() {
         });
     });
     
-    // 시민제보 버튼은 별도 처리 (모달 열기)
-    const citizenReportBtn = document.getElementById('citizen-report-btn');
-    citizenReportBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // 시민제보 모달 열기
-        const modal = document.getElementById('citizen-report-modal');
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        
-        console.log('시민제보 모달 열림');
-    });
+    // 시민제보 버튼은 setupCitizenReport에서 처리됨
 }
 
 // 레이어 전환 함수
