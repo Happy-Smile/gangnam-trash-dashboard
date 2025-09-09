@@ -22,8 +22,15 @@ let USE_BACKEND = true;
 // CSV 파일에서 데이터 가져오기 (주소 기반 좌표 변환)
 async function fetchTrashBins() {
     try {
-        const response = await fetch('./서울특별시_강남구_쓰레기통설치현황_20210622_utf8.csv');
+        console.log('🔄 CSV 파일 로드 시작...');
+        const response = await fetch('./gangnam_trash_bins.csv');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const csvText = await response.text();
+        console.log('✅ CSV 파일 로드 완료, 크기:', csvText.length);
         
         trashCanData = [];
         
@@ -64,7 +71,9 @@ async function fetchTrashBins() {
         return trashCanData;
     } catch (error) {
         console.error('❌ CSV 파일 로드 오류:', error);
+        console.error('❌ 오류 상세:', error.message);
         trashCanData = [];
+        showErrorState(`데이터 로드 실패: ${error.message}`);
         return [];
     }
 }
