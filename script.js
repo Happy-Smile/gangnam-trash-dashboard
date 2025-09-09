@@ -16,6 +16,9 @@ const API_BASE_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api' 
     : '/api';
 
+// 백엔드 없이 작동하는지 확인
+let USE_BACKEND = true;
+
 // CSV 파일에서 데이터 가져오기 (주소 기반 좌표 변환)
 async function fetchTrashBins() {
     try {
@@ -226,20 +229,36 @@ async function loadDataAndUpdateMap() {
 async function loadCitizenReports() {
     try {
         console.log('🔄 시민제보 데이터 로드 시작...');
-        const response = await fetch(`${API_BASE_URL}/citizen-reports`);
-        const result = await response.json();
         
-        if (result.success) {
-            citizenReports = result.data;
-            console.log('✅ 시민제보 데이터 로드 완료:', citizenReports.length, '개');
-            console.log('📍 시민제보 좌표들:', citizenReports.map(r => r.coordinates));
+        // 백엔드 연결 시도
+        const response = await fetch(`${API_BASE_URL}/citizen-reports`);
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                citizenReports = result.data;
+                console.log('✅ 시민제보 데이터 로드 완료:', citizenReports.length, '개');
+                console.log('📍 시민제보 좌표들:', citizenReports.map(r => r.coordinates));
+                USE_BACKEND = true;
+                return;
+            }
+        }
+        
+        // 백엔드 연결 실패 시 로컬 스토리지에서 로드
+        console.log('⚠️ 백엔드 연결 실패, 로컬 데이터 사용');
+        const localData = localStorage.getItem('citizenReports');
+        if (localData) {
+            citizenReports = JSON.parse(localData);
+            console.log('✅ 로컬 시민제보 데이터 로드:', citizenReports.length, '개');
         } else {
-            console.error('❌ 시민제보 데이터 로드 실패:', result.error);
             citizenReports = [];
         }
+        USE_BACKEND = false;
+        
     } catch (error) {
         console.error('❌ 시민제보 데이터 로드 오류:', error);
         citizenReports = [];
+        USE_BACKEND = false;
     }
 }
 
@@ -612,61 +631,79 @@ async function handleFormSubmit(event) {
         photo: photoFile ? URL.createObjectURL(photoFile) : null
     };
     
-    try {
-        // 서버로 제보 데이터 전송
-        const response = await fetch(`${API_BASE_URL}/citizen-reports`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(reportData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // 서버에서 받은 제보 데이터를 로컬에 추가
-            const report = result.data;
-            citizenReports.push(report);
-            
-            // 지도에 빨간 마커 추가
-            addCitizenReportMarker(report);
-            
-            // 제보 위치로 지도 이동 및 줌
-            map.setView([report.coordinates.lat, report.coordinates.lng], 16);
-            
-            // 마커에 애니메이션 효과 추가
-            setTimeout(() => {
-                const marker = citizenReportMarkers[citizenReportMarkers.length - 1];
-                if (marker) {
-                    marker.openPopup();
-                }
-            }, 500);
-            
-            // 통계 업데이트
-            updateCitizenReportCount();
-            
-            // 모달 닫기
-            document.getElementById('citizen-report-modal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-            
-            // 폼 초기화
-            event.target.reset();
-            resetPhotoUpload();
-            
-            // 성공 메시지
-            alert('시민제보가 성공적으로 등록되었습니다!\n지도가 해당 위치로 이동했습니다.');
-            
-            console.log('✅ 시민제보 등록 성공:', report);
-            console.log('📍 지도를 제보 위치로 이동:', report.coordinates);
-        } else {
-            throw new Error(result.error || '서버 오류가 발생했습니다.');
-        }
-        
-    } catch (error) {
-        console.error('❌ 시민제보 등록 실패:', error);
-        alert('시민제보 등록에 실패했습니다. 다시 시도해주세요.');
-    }
+           try {
+               let report;
+               
+               if (USE_BACKEND) {
+                   // 서버로 제보 데이터 전송
+                   const response = await fetch(`${API_BASE_URL}/citizen-reports`, {
+                       method: 'POST',
+                       headers: {
+                           'Content-Type': 'application/json',
+                       },
+                       body: JSON.stringify(reportData)
+                   });
+                   
+                   const result = await response.json();
+                   
+                   if (result.success) {
+                       report = result.data;
+                   } else {
+                       throw new Error(result.error || '서버 오류가 발생했습니다.');
+                   }
+               } else {
+                   // 로컬 스토리지에 저장
+                   report = {
+                       id: Date.now(),
+                       title: reportData.title,
+                       description: reportData.description,
+                       type: reportData.type,
+                       coordinates: reportData.coordinates,
+                       timestamp: new Date().toISOString(),
+                       status: 'pending',
+                       photo: reportData.photo
+                   };
+                   
+                   citizenReports.push(report);
+                   localStorage.setItem('citizenReports', JSON.stringify(citizenReports));
+                   console.log('✅ 로컬 시민제보 저장 완료');
+               }
+               
+               // 지도에 빨간 마커 추가
+               addCitizenReportMarker(report);
+               
+               // 제보 위치로 지도 이동 및 줌
+               map.setView([report.coordinates.lat, report.coordinates.lng], 16);
+               
+               // 마커에 애니메이션 효과 추가
+               setTimeout(() => {
+                   const marker = citizenReportMarkers[citizenReportMarkers.length - 1];
+                   if (marker) {
+                       marker.openPopup();
+                   }
+               }, 500);
+               
+               // 통계 업데이트
+               updateCitizenReportCount();
+               
+               // 모달 닫기
+               document.getElementById('citizen-report-modal').style.display = 'none';
+               document.body.style.overflow = 'auto';
+               
+               // 폼 초기화
+               event.target.reset();
+               resetPhotoUpload();
+               
+               // 성공 메시지
+               alert('시민제보가 성공적으로 등록되었습니다!\n지도가 해당 위치로 이동했습니다.');
+               
+               console.log('✅ 시민제보 등록 성공:', report);
+               console.log('📍 지도를 제보 위치로 이동:', report.coordinates);
+               
+           } catch (error) {
+               console.error('❌ 시민제보 등록 실패:', error);
+               alert('시민제보 등록에 실패했습니다. 다시 시도해주세요.');
+           }
 }
 
 // 시민제보 마커 추가
