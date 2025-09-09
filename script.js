@@ -194,7 +194,32 @@ let districtStats = [];
 // 시민제보 마커 표시 상태
 let citizenReportsVisible = true;
 
-// 행정동별 통계 생성
+// 강남구 행정동별 면적 데이터 (단위: km²)
+const districtArea = {
+    '역삼1동': 1.2,
+    '역삼2동': 1.1,
+    '세곡동': 2.8,
+    '대치1동': 1.5,
+    '대치2동': 1.3,
+    '대치4동': 1.0,
+    '청담동': 1.8,
+    '압구정동': 1.4,
+    '논현1동': 1.6,
+    '논현2동': 1.2,
+    '도곡1동': 1.1,
+    '도곡2동': 0.9,
+    '삼성1동': 1.3,
+    '삼성2동': 1.2,
+    '신사동': 1.7,
+    '개포1동': 2.1,
+    '개포2동': 1.9,
+    '개포4동': 1.6,
+    '일원1동': 1.8,
+    '일원본동': 1.4,
+    '수서동': 2.0
+};
+
+// 행정동별 통계 생성 (인구밀도 고려)
 function generateDistrictStats() {
     const districtCount = {};
     
@@ -203,19 +228,28 @@ function generateDistrictStats() {
         if (item.location) { // 설치위치 필드 사용
             const location = item.location;
             
-            // 강남구 주요 행정동 매핑
+            // 강남구 주요 행정동 매핑 (더 정확한 매핑)
             const districts = {
-                '역삼': '역삼1동',
+                '역삼1': '역삼1동',
+                '역삼2': '역삼2동',
                 '세곡': '세곡동', 
-                '대치': '대치1동',
+                '대치1': '대치1동',
+                '대치2': '대치2동',
+                '대치4': '대치4동',
                 '청담': '청담동',
                 '압구정': '압구정동',
-                '논현': '논현1동',
-                '도곡': '도곡1동',
-                '삼성': '삼성1동',
+                '논현1': '논현1동',
+                '논현2': '논현2동',
+                '도곡1': '도곡1동',
+                '도곡2': '도곡2동',
+                '삼성1': '삼성1동',
+                '삼성2': '삼성2동',
                 '신사': '신사동',
-                '개포': '개포1동',
-                '일원': '일원1동',
+                '개포1': '개포1동',
+                '개포2': '개포2동',
+                '개포4': '개포4동',
+                '일원1': '일원1동',
+                '일원본': '일원본동',
                 '수서': '수서동'
             };
             
@@ -229,12 +263,21 @@ function generateDistrictStats() {
         }
     });
     
-    // 배열로 변환하고 정렬
+    // 배열로 변환하고 면적당 쓰레기통 개수 계산
     districtStats = Object.entries(districtCount)
-        .map(([district, count]) => ({ district, count }))
-        .sort((a, b) => b.count - a.count); // 개수 내림차순 정렬
+        .map(([district, count]) => {
+            const area = districtArea[district] || 1.0; // 기본값 1km²
+            const density = (count / area).toFixed(2); // km²당 쓰레기통 개수
+            return { 
+                district, 
+                count, 
+                area,
+                density: parseFloat(density)
+            };
+        })
+        .sort((a, b) => b.density - a.density); // 면적당 밀도 내림차순 정렬
     
-    console.log('📊 행정동별 통계 생성:', districtStats);
+    console.log('📊 행정동별 통계 생성 (면적당 밀도 고려):', districtStats);
     return districtStats;
 }
 
@@ -867,26 +910,26 @@ function createBarChart() {
         return;
     }
     
-    // 상위 5개만 표시
+    // 상위 5개만 표시 (면적당 밀도 기준)
     const topDistricts = districtStats.slice(0, 5);
-    const maxCount = Math.max(...topDistricts.map(d => d.count));
+    const maxDensity = Math.max(...topDistricts.map(d => d.density));
     
-    console.log('📊 막대그래프 데이터:', topDistricts);
-    console.log('📊 최대값:', maxCount);
+    console.log('📊 막대그래프 데이터 (면적당 밀도 고려):', topDistricts);
+    console.log('📊 최대 밀도:', maxDensity);
     
     topDistricts.forEach((district, index) => {
         const barItem = document.createElement('div');
         barItem.className = 'bar-item';
         
-        const percentage = (district.count / maxCount) * 100;
-        console.log(`📊 ${district.district}: ${district.count}개 (${percentage.toFixed(1)}%)`);
+        const percentage = (district.density / maxDensity) * 100;
+        console.log(`📊 ${district.district}: ${district.count}개 (면적 ${district.area}km², km²당 ${district.density}개)`);
         
         barItem.innerHTML = `
             <div class="district-name">${district.district}</div>
             <div class="bar-visual">
                 <div class="bar-fill" style="width: 0%"></div>
             </div>
-            <div class="bar-count">${district.count}개</div>
+            <div class="bar-count">${district.density}개/km²</div>
         `;
         
         chartContainer.appendChild(barItem);
@@ -910,18 +953,18 @@ function createPriorityTable() {
         return;
     }
     
-    // 하위 5개 지역을 부족 지역으로 표시
+    // 하위 5개 지역을 부족 지역으로 표시 (면적당 밀도 기준)
     const shortageDistricts = districtStats.slice(-5).reverse();
     
     shortageDistricts.forEach((district, index) => {
         const row = document.createElement('tr');
         
-        // 부족도 계산 (임의의 기준)
+        // 부족도 계산 (km²당 쓰레기통 개수 기준)
         let shortageLevel, priorityClass;
-        if (district.count < 20) {
+        if (district.density < 20) {
             shortageLevel = '높음';
             priorityClass = 'priority-high';
-        } else if (district.count < 40) {
+        } else if (district.density < 40) {
             shortageLevel = '보통';
             priorityClass = 'priority-medium';
         } else {
@@ -932,7 +975,7 @@ function createPriorityTable() {
         row.innerHTML = `
             <td>${index + 1}</td>
             <td>${district.district}</td>
-            <td>${district.count}개</td>
+            <td>${district.density}개/km²</td>
             <td class="${priorityClass}">${shortageLevel}</td>
             <td class="${priorityClass}">${shortageLevel === '높음' ? '긴급' : shortageLevel === '보통' ? '보통' : '낮음'}</td>
         `;
