@@ -189,11 +189,21 @@ function generateDistrictStats() {
     // CSV 데이터에서 행정동별 쓰레기통 개수 계산
     trashCanData.forEach(item => {
         if (item.address) {
-            // 주소에서 행정동 추출 (예: "서울특별시 강남구 역삼1동" -> "역삼1동")
+            // 주소에서 행정동 추출
+            // 예: "서울특별시 강남구 역삼1동 청담동 123-45" -> "역삼1동"
             const addressParts = item.address.split(' ');
-            if (addressParts.length >= 3) {
-                const district = addressParts[2]; // 행정동
-                districtCount[district] = (districtCount[district] || 0) + 1;
+            
+            // 강남구 다음에 오는 부분이 행정동
+            for (let i = 0; i < addressParts.length; i++) {
+                if (addressParts[i] === '강남구' && i + 1 < addressParts.length) {
+                    const district = addressParts[i + 1];
+                    
+                    // 행정동 패턴 확인 (예: 역삼1동, 세곡동, 대치2동 등)
+                    if (district.match(/동$/)) {
+                        districtCount[district] = (districtCount[district] || 0) + 1;
+                        break;
+                    }
+                }
             }
         }
     });
@@ -833,8 +843,8 @@ function createBarChart() {
         return;
     }
     
-    // 상위 10개만 표시
-    const topDistricts = districtStats.slice(0, 10);
+    // 상위 5개만 표시
+    const topDistricts = districtStats.slice(0, 5);
     const maxCount = Math.max(...topDistricts.map(d => d.count));
     
     topDistricts.forEach((district, index) => {
@@ -846,7 +856,7 @@ function createBarChart() {
         barItem.innerHTML = `
             <div class="district-name">${district.district}</div>
             <div class="bar-visual">
-                <div class="bar-fill" style="width: ${percentage}%"></div>
+                <div class="bar-fill" style="width: 0%"></div>
             </div>
             <div class="bar-count">${district.count}개</div>
         `;
@@ -856,7 +866,7 @@ function createBarChart() {
         // 애니메이션 효과
         setTimeout(() => {
             barItem.querySelector('.bar-fill').style.width = `${percentage}%`;
-        }, index * 100);
+        }, index * 200);
     });
 }
 
