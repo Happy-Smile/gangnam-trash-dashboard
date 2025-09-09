@@ -81,8 +81,7 @@ async function fetchTrashBins() {
                 });
                 
                 if (row['설치위치'] && row['설치위치'] !== '') {
-                    // 개선된 좌표 분산 알고리즘 사용
-                    const coordinates = getImprovedCoordinatesFromAddress(row['설치위치'], i);
+                    const coordinates = getCoordinatesFromAddress(row['설치위치'], i);
                     trashCanData.push({
                         id: i,
                         name: row['휴지통명'] || '쓰레기통',
@@ -111,40 +110,6 @@ async function fetchTrashBins() {
         showErrorState(`데이터 로드 실패: ${error.message}`);
         return [];
     }
-}
-
-// 개선된 좌표 분산 함수
-function getImprovedCoordinatesFromAddress(address, index) {
-    // 강남구 전체 영역을 더 넓게 분산
-    const gangnamBounds = {
-        north: 37.5600,  // 북쪽 경계
-        south: 37.4500,  // 남쪽 경계
-        east: 127.1200,  // 동쪽 경계
-        west: 127.0000   // 서쪽 경계
-    };
-    
-    // 인덱스 기반으로 강남구 전체에 분산
-    const totalRows = 1000; // 예상 총 행 수
-    const normalizedIndex = index / totalRows;
-    
-    // 위도 분산 (남북)
-    const latRange = gangnamBounds.north - gangnamBounds.south;
-    const lat = gangnamBounds.south + (normalizedIndex * latRange);
-    
-    // 경도 분산 (동서) - 황금각도 사용
-    const goldenAngle = 2.39996322972865332; // 137.5도
-    const lngAngle = (index * goldenAngle) % (2 * Math.PI);
-    const lngRange = gangnamBounds.east - gangnamBounds.west;
-    const lng = gangnamBounds.west + ((Math.cos(lngAngle) + 1) / 2) * lngRange;
-    
-    // 추가 랜덤 오프셋 (더 큰 범위)
-    const randomLat = (Math.random() - 0.5) * 0.005; // ±0.0025도
-    const randomLng = (Math.random() - 0.5) * 0.005; // ±0.0025도
-    
-    return {
-        lat: lat + randomLat,
-        lng: lng + randomLng
-    };
 }
 
 // 주소를 좌표로 변환하는 함수 (개선된 분산 알고리즘)
@@ -558,8 +523,8 @@ function addTrashCanMarkers() {
         return L.divIcon({
             className: 'trash-icon',
             html: `<i class="fas ${iconClass}" style="color: ${iconColor}"></i>`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
+            iconSize: [7, 7],
+            iconAnchor: [3, 3]
         });
     };
     
@@ -964,9 +929,9 @@ function addCitizenReportMarker(report) {
     // 팝업 없는 간단한 빨간 마커 생성
     const marker = L.marker([report.coordinates.lat, report.coordinates.lng], {
         icon: L.divIcon({
-            html: '<div style="width: 18px; height: 18px; background: red; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(255,0,0,0.8);"></div>',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
+            html: '<div style="width: 6px; height: 6px; background: red; border: 1px solid white; border-radius: 50%; box-shadow: 0 0 3px rgba(255,0,0,0.8);"></div>',
+            iconSize: [6, 6],
+            iconAnchor: [3, 3]
         })
     });
     
