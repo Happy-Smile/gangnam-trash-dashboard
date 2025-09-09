@@ -523,8 +523,8 @@ function addTrashCanMarkers() {
         return L.divIcon({
             className: 'trash-icon',
             html: `<i class="fas ${iconClass}" style="color: ${iconColor}"></i>`,
-            iconSize: [7, 7],
-            iconAnchor: [3, 3]
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
         });
     };
     
@@ -929,9 +929,9 @@ function addCitizenReportMarker(report) {
     // 팝업 없는 간단한 빨간 마커 생성
     const marker = L.marker([report.coordinates.lat, report.coordinates.lng], {
         icon: L.divIcon({
-            html: '<div style="width: 6px; height: 6px; background: red; border: 1px solid white; border-radius: 50%; box-shadow: 0 0 3px rgba(255,0,0,0.8);"></div>',
-            iconSize: [6, 6],
-            iconAnchor: [3, 3]
+            html: '<div style="width: 18px; height: 18px; background: red; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(255,0,0,0.8);"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
         })
     });
     
