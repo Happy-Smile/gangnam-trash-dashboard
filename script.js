@@ -53,58 +53,59 @@ const API_BASE_URL = window.location.hostname === 'localhost'
 // 백엔드 없이 작동하는지 확인 (Netlify는 정적 사이트이므로 false)
 let USE_BACKEND = false;
 
-// CSV 파일에서 데이터 가져오기 (주소 기반 좌표 변환)
+// JSON 파일에서 데이터 가져오기 (실제 좌표 사용)
 async function fetchTrashBins() {
     try {
-        console.log('🔄 CSV 파일 로드 시작...');
-        const response = await fetch('./gangnam_trash_bins.csv');
+        console.log('🔄 JSON 파일 로드 시작...');
+        const response = await fetch('./전국휴지통표준데이터.json');
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const csvText = await response.text();
-        console.log('✅ CSV 파일 로드 완료, 크기:', csvText.length);
+        const jsonData = await response.json();
+        console.log('✅ JSON 파일 로드 완료, 레코드 수:', jsonData.records.length);
         
         trashCanData = [];
         
-        // CSV 파싱
-        const lines = csvText.split('\n');
-        const headers = lines[0].split(',');
+        // 강남구 데이터만 필터링
+        const gangnamData = jsonData.records.filter(record => 
+            record.시군구명 === '강남구'
+        );
         
-        for (let i = 1; i < lines.length; i++) {
-            if (lines[i].trim()) {
-                const values = lines[i].split(',');
-                const row = {};
-                headers.forEach((header, index) => {
-                    row[header.trim()] = values[index] ? values[index].trim() : '';
+        console.log('📍 강남구 쓰레기통 데이터:', gangnamData.length, '개');
+        
+        gangnamData.forEach((record, index) => {
+            // 실제 좌표 사용
+            const lat = parseFloat(record.위도);
+            const lng = parseFloat(record.경도);
+            
+            // 좌표 유효성 검사
+            if (!isNaN(lat) && !isNaN(lng) && lat > 0 && lng > 0) {
+                trashCanData.push({
+                    id: index + 1,
+                    name: record.설치장소명 || '쓰레기통',
+                    address: record.소재지도로명주소 || record.소재지지번주소,
+                    lat: lat,
+                    lng: lng,
+                    type: record.휴지통종류 || '일반쓰레기',
+                    status: '정상',
+                    install_date: record.데이터기준일자 || '정보 없음',
+                    road_name: record.소재지도로명주소 || '',
+                    location: record.세부위치 || '',
+                    point: record.설치장소명 || '',
+                    management: record.관리기관명 || '정보 없음',
+                    phone: record.관리기관전화번호 || '정보 없음'
                 });
-                
-                if (row['설치위치'] && row['설치위치'] !== '') {
-                    const coordinates = getCoordinatesFromAddress(row['설치위치'], i);
-                    trashCanData.push({
-                        id: i,
-                        name: row['휴지통명'] || '쓰레기통',
-                        address: row['설치위치'],
-                        lat: coordinates.lat,
-                        lng: coordinates.lng,
-                        type: row['휴지통종류'] || '일반쓰레기',
-                        status: '정상',
-                        install_date: row['설치일자'] || '정보 없음',
-                        road_name: row['도로명주소'] || '',
-                        location: row['설치위치'] || '',
-                        point: row['설치지점'] || '',
-                        management: row['관리기관명'] || '정보 없음',
-                        phone: row['관리기관전화번호'] || '정보 없음'
-                    });
-                }
+            } else {
+                console.warn('⚠️ 유효하지 않은 좌표:', record.설치장소명, lat, lng);
             }
-        }
+        });
 
-        console.log('✅ CSV 쓰레기통 데이터 로드 완료:', trashCanData.length, '개');
+        console.log('✅ JSON 쓰레기통 데이터 로드 완료:', trashCanData.length, '개');
         return trashCanData;
     } catch (error) {
-        console.error('❌ CSV 파일 로드 오류:', error);
+        console.error('❌ JSON 파일 로드 오류:', error);
         console.error('❌ 오류 상세:', error.message);
         trashCanData = [];
         showErrorState(`데이터 로드 실패: ${error.message}`);
