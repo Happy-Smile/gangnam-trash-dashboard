@@ -315,9 +315,56 @@ function generateDistrictStats() {
     return districtStats;
 }
 
+// 현재 위치 가져오기 함수
+function getCurrentPosition() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            console.log('📍 Geolocation이 지원되지 않습니다');
+            resolve(null);
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                console.log('📍 현재 위치 획득:', { lat, lng });
+                resolve({ lat, lng });
+            },
+            (error) => {
+                console.log('📍 위치 접근 실패:', error.message);
+                resolve(null);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000 // 5분 캐시
+            }
+        );
+    });
+}
+
 // 지도 초기화 함수
 async function initMap() {
-    map = L.map('map').setView(GANGNAM_CENTER, 13);
+    // 현재 위치를 가져와서 지도 초기화
+    let initialLocation = GANGNAM_CENTER; // 기본값
+    let initialZoom = 13;
+    
+    try {
+        // 현재 위치 가져오기
+        const position = await getCurrentPosition();
+        if (position) {
+            initialLocation = [position.lat, position.lng];
+            initialZoom = 15; // 현재 위치일 때는 더 가깝게
+            console.log('📍 현재 위치로 지도 초기화:', initialLocation);
+        } else {
+            console.log('📍 현재 위치를 가져올 수 없어 기본 위치 사용:', GANGNAM_CENTER);
+        }
+    } catch (error) {
+        console.log('📍 위치 접근 권한이 없어 기본 위치 사용:', GANGNAM_CENTER);
+    }
+    
+    map = L.map('map').setView(initialLocation, initialZoom);
     
     // OpenStreetMap 타일 레이어 추가
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -346,6 +393,9 @@ async function loadDataAndUpdateMap() {
         
     // 시민제보 마커 추가
     addAllCitizenReportMarkers();
+    
+    // 시민제보 카운트 업데이트
+    updateCitizenReportCount();
         
         // 통계 계산 및 업데이트
         const statsData = calculateStatistics();
@@ -610,7 +660,10 @@ function setupCitizenReport() {
     const closeBtn = document.querySelector('.close');
     const cancelBtn = document.querySelector('.btn-cancel');
     const photoUploadArea = document.getElementById('photo-upload-area');
-    const photoUpload = document.getElementById('photo-upload');
+    const photoUploadCamera = document.getElementById('photo-upload-camera');
+    const photoUploadGallery = document.getElementById('photo-upload-gallery');
+    const cameraBtn = document.getElementById('camera-btn');
+    const galleryBtn = document.getElementById('gallery-btn');
     const form = document.getElementById('citizen-report-form');
 
     // 모달 닫기
@@ -631,9 +684,18 @@ function setupCitizenReport() {
         }
     });
 
-    // 사진 업로드 영역 클릭
-    photoUploadArea.addEventListener('click', () => {
-        photoUpload.click();
+    // 카메라 버튼 클릭
+    cameraBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        photoUploadCamera.click();
+    });
+    
+    // 갤러리 버튼 클릭
+    galleryBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        photoUploadGallery.click();
     });
     
     // 상단 시민제보 버튼 (새 제보 입력)
@@ -660,8 +722,9 @@ function setupCitizenReport() {
         });
     }
 
-    // 사진 선택 시
-    photoUpload.addEventListener('change', handlePhotoUpload);
+    // 사진 선택 시 (카메라와 갤러리 모두)
+    photoUploadCamera.addEventListener('change', handlePhotoUpload);
+    photoUploadGallery.addEventListener('change', handlePhotoUpload);
 
     // 사진 제거 버튼
     document.getElementById('remove-photo').addEventListener('click', resetPhotoUpload);
@@ -671,7 +734,8 @@ function setupCitizenReport() {
     if (changePhotoBtn) {
         changePhotoBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            photoUpload.click();
+            // 기본적으로 갤러리 선택으로 변경
+            photoUploadGallery.click();
         });
     }
 
@@ -753,11 +817,13 @@ function convertDMSToDD(dms, ref) {
 function resetPhotoUpload() {
     const preview = document.getElementById('photo-preview');
     const placeholder = document.querySelector('.upload-placeholder');
-    const photoUpload = document.getElementById('photo-upload');
+    const photoUploadCamera = document.getElementById('photo-upload-camera');
+    const photoUploadGallery = document.getElementById('photo-upload-gallery');
     
     preview.style.display = 'none';
     placeholder.style.display = 'block';
-    photoUpload.value = '';
+    photoUploadCamera.value = '';
+    photoUploadGallery.value = '';
 }
 
 // 폼 제출 처리
@@ -767,7 +833,8 @@ async function handleFormSubmit(event) {
     const title = document.getElementById('report-title').value;
     const description = document.getElementById('report-description').value;
     const type = document.getElementById('report-type').value;
-    const photoFile = document.getElementById('photo-upload').files[0];
+    const photoFile = document.getElementById('photo-upload-camera').files[0] || 
+                     document.getElementById('photo-upload-gallery').files[0];
     
     // 사진에서 좌표 추출
     let coordinates = null;

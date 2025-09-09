@@ -222,20 +222,29 @@
                     <div class="form-group">
                         <label for="photo-upload">📸 사진 업로드</label>
                         <div class="photo-upload-area" id="photo-upload-area">
-                            <input type="file" id="photo-upload" accept="image/*" capture="environment" style="display: none;">
+                            <input type="file" id="photo-upload-camera" accept="image/*" capture="environment" style="display: none;">
+                            <input type="file" id="photo-upload-gallery" accept="image/*" style="display: none;">
                             <div class="upload-placeholder">
                                 <div class="camera-icon">
                                     <i class="fas fa-camera"></i>
                                 </div>
-                                <h3>사진을 찍어서 업로드하세요</h3>
-                                <p>쓰레기통의 상태를 명확하게 보여주는 사진을 찍어주세요</p>
+                                <h3>사진을 업로드하세요</h3>
+                                <p>쓰레기통의 상태를 명확하게 보여주는 사진을 업로드해주세요</p>
+                                
+                                <div class="upload-options">
+                                    <button type="button" id="camera-btn" class="upload-btn camera-btn">
+                                        <i class="fas fa-camera"></i>
+                                        📸 사진 찍기
+                                    </button>
+                                    <button type="button" id="gallery-btn" class="upload-btn gallery-btn">
+                                        <i class="fas fa-images"></i>
+                                        📁 갤러리에서 선택
+                                    </button>
+                                </div>
+                                
                                 <div class="upload-tips">
                                     <small>💡 <strong>팁:</strong> 위치 정보가 포함된 사진을 권장합니다</small>
-                                    <small>📱 카메라로 직접 촬영하거나 갤러리에서 선택할 수 있습니다</small>
                                 </div>
-                                <button type="button" class="upload-btn">
-                                    <i class="fas fa-plus"></i> 사진 선택
-                                </button>
                             </div>
                             <div class="photo-preview" id="photo-preview" style="display: none;">
                                 <div class="preview-container">
